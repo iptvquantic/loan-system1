@@ -1,0 +1,349 @@
+PROMPT MESTRE DEFINITIVO — SISTEMA WEB PROFISSIONAL DE GESTÃO DE
+EMPRÉSTIMOS
+
+Quero que você atue como um ARQUITETO DE SOFTWARE FULL STACK SÊNIOR
+especialista em:
+
+-   Node.js
+-   React
+-   PostgreSQL
+-   Sistemas financeiros
+-   Segurança web
+-   UX de painéis financeiros (estilo banco digital)
+-   Deploy em nuvem
+
+OBJETIVO
+
+Criar um SISTEMA WEB COMPLETO DE GESTÃO DE EMPRÉSTIMOS PESSOAIS para uso
+privado.
+
+O sistema deve permitir controlar:
+
+-   clientes
+-   valores emprestados
+-   juros diários
+-   atrasos
+-   multas
+-   pagamentos
+-   fluxo de caixa
+-   relatórios financeiros
+-   ranking de clientes
+
+O sistema deve rodar:
+
+1)  LOCALMENTE NO UBUNTU
+2)  HOSPEDADO NA INTERNET
+3)  ACESSÍVEL VIA CELULAR
+4)  COM LOGIN E SENHA
+
+Exemplo de acesso:
+
+https://meupainel-emprestimos.com
+
+STACK TECNOLÓGICA
+
+BACKEND Node.js Express.js
+
+FRONTEND React Vite TailwindCSS
+
+BANCO DE DADOS PostgreSQL
+
+AUTENTICAÇÃO JWT bcrypt
+
+UPLOAD DE DOCUMENTOS Multer
+
+DEPLOY Docker Render ou Railway
+
+REPOSITÓRIO GitHub
+
+ESTRUTURA DO PROJETO
+
+/loan-system /backend /frontend /database /uploads /docs
+
+INTERFACE
+
+A interface deve ser moderna e limpa, inspirada em:
+
+-   painéis de bancos digitais
+-   dashboards financeiros modernos
+-   estilo Stripe / Notion / Fintech
+
+Deve ser totalmente RESPONSIVA e funcionar perfeitamente no celular.
+
+MENU LATERAL
+
+Dashboard Clientes Empréstimos Pagamentos Cobranças Simulador Caixa
+Relatórios Ranking de clientes Configurações
+
+FUNCIONALIDADES PRINCIPAIS
+
+LOGIN ADMINISTRADOR
+
+Tela com:
+
+email senha
+
+Senha criptografada. Sessão protegida com JWT.
+
+DASHBOARD
+
+Mostrar:
+
+Total emprestado Total a receber Lucro total Clientes ativos Contratos
+atrasados Contratos críticos
+
+Gráficos:
+
+Lucro mensal Valores emprestados Valores recebidos
+
+CLIENTES
+
+Cadastro com:
+
+Nome completo Telefone CPF Endereço Data cadastro
+
+Informações adicionais:
+
+Fonte de renda Dia que recebe pagamento
+
+DOCUMENTOS OBRIGATÓRIOS
+
+Upload:
+
+Comprovante de residência Identidade frente Identidade verso
+
+EMPRÉSTIMOS
+
+Campos:
+
+Cliente Valor emprestado Data empréstimo Observações
+
+REGRAS DO SISTEMA
+
+JUROS
+
+1% ao dia
+
+REGRA DOS 30 DIAS
+
+A cada 30 dias cliente deve:
+
+Pagar 30% de juros
+
+ou
+
+Quitar capital + 30%
+
+ATRASO
+
+Após 30 dias sem pagamento:
+
+Multa fixa de:
+
+R$ 50 por dia
+
+Limite máximo:
+
+7 dias
+
+Após 7 dias:
+
+Status CRÍTICO
+
+STATUS DOS CONTRATOS
+
+ATIVO ATRASADO CRÍTICO QUITADO
+
+CÁLCULO AUTOMÁTICO
+
+O sistema NÃO deve salvar juros acumulados.
+
+Os valores devem ser calculados dinamicamente com base em:
+
+valor emprestado data empréstimo data atual pagamentos realizados
+
+FUNÇÃO CENTRAL
+
+Criar função:
+
+calculateLoanStatus()
+
+Exemplo:
+
+function calculateLoanStatus(loan) {
+
+const today = new Date() const start = new Date(loan.startDate)
+
+const days = Math.floor((today - start) / (1000 * 60 * 60 * 24))
+
+const interest = loan.amount * 0.01 * days
+
+let fine = 0
+
+if (days > 30) {
+
+const lateDays = Math.min(days - 30, 7)
+
+fine = lateDays * 50
+
+}
+
+const total = loan.amount + interest + fine
+
+return {
+
+days, interest, fine, total
+
+}
+
+}
+
+BOTÃO GERAR COBRANÇA
+
+Dentro de cada contrato deve existir botão:
+
+GERAR COBRANÇA
+
+Ao clicar deve gerar texto pronto:
+
+CLIENTE: Nome
+
+Valor emprestado: R$ XXXX Data do empréstimo: XX/XX/XXXX
+
+Dias corridos: XX
+
+Juros acumulados: R$ XXXX Multa atraso: R$ XXXX
+
+TOTAL ATUALIZADO: R$ XXXX
+
+Status: XXXX
+
+Para regularizar hoje:
+
+Opção 1: Pagar juros e renovar prazo.
+
+Opção 2: Quitar total.
+
+BOTÕES
+
+COPIAR TEXTO GERAR PDF
+
+IMPORTANTE
+
+O sistema NÃO deve enviar mensagens automaticamente.
+
+Apenas gerar texto para envio manual.
+
+PAGAMENTOS
+
+Registrar:
+
+valor pago data tipo
+
+Tipos:
+
+juros parcial quitação
+
+CONTROLE DE CAIXA
+
+Criar módulo financeiro chamado:
+
+CAIXA
+
+Ele deve registrar:
+
+Entradas: - pagamentos de clientes - juros recebidos
+
+Saídas: - novos empréstimos - despesas
+
+Mostrar:
+
+saldo atual histórico de movimentações gráfico de fluxo de caixa
+
+PAINEL DE LUCRO TOTAL
+
+Mostrar:
+
+lucro total acumulado lucro mensal juros recebidos capital retornado
+
+RANKING DE CLIENTES
+
+Criar ranking automático:
+
+Clientes que mais pagaram juros Clientes com maior volume de empréstimos
+Clientes mais pontuais
+
+DETecção DE CLIENTE PERIGOSO
+
+Sistema deve calcular risco automaticamente.
+
+Critérios:
+
+Quantidade de atrasos Tempo médio de pagamento Quantidade de empréstimos
+quitados
+
+Score:
+
+BAIXO RISCO MÉDIO RISCO ALTO RISCO
+
+Clientes de alto risco devem aparecer destacados no sistema.
+
+LISTA DE CONTRATOS
+
+Tabela com:
+
+Cliente Valor emprestado Dívida atual Dias corridos Status
+
+PERFIL DO CLIENTE
+
+Mostrar:
+
+dados pessoais documentos contratos histórico pagamentos valor total
+devido nível de risco
+
+ALERTAS
+
+Contratos próximos de 30 dias Contratos atrasados Contratos críticos
+
+RELATÓRIOS
+
+Lucro total Juros recebidos Clientes ativos Contratos quitados
+
+Exportação:
+
+CSV PDF
+
+SEGURANÇA
+
+Senhas criptografadas Proteção de rotas Validação de dados Sanitização
+de inputs
+
+DEPLOY
+
+Preparar sistema para:
+
+Docker
+
+Incluir:
+
+Dockerfile docker-compose
+
+README.md
+
+Com instruções completas para:
+
+Ubuntu
+
+Passo a passo:
+
+Instalar Node.js Instalar PostgreSQL Criar banco Rodar backend Rodar
+frontend Subir no GitHub Deploy no Render
+
+OBJETIVO FINAL
+
+Gerar um sistema completo que permita:
+
+Controlar todos os empréstimos Calcular dívidas automaticamente Gerar
+cobrança manual Controlar fluxo de caixa Visualizar lucro total Detectar
+clientes perigosos Ver ranking de clientes Acessar de qualquer lugar via
+navegador Interface estilo banco digital Modo celular perfeito
