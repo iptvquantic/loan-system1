@@ -225,7 +225,7 @@ export default function LoanDetailPage() {
           { label: 'Multa',         value: fmt.currency(loan.fine),        icon: AlertTriangle, color: loan.fine > 0 ? 'red' : 'sky' },
           { label: 'Total Pago',    value: fmt.currency(loan.totalPaid),   icon: CheckCircle, color: 'emerald' },
           { label: 'Dívida Atual',  value: fmt.currency(loan.currentDebt), icon: Clock, color: isSettled ? 'emerald' : 'amber' },
-          { label: 'Dias Corridos', value: `${loan.totalDays} dias`,       icon: Calendar, color: 'sky' },
+          { label: 'Dias s/ Pgto', value: `${loan.daysSinceLastPayment} dias`,       icon: Calendar, color: 'sky' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="card-sm flex flex-col gap-1">
             <p className="text-xs text-slate-500">{label}</p>
