@@ -1,8 +1,7 @@
 /**
- * MOTOR DE CÁLCULO CORRIGIDO
- * - Juros calculados SOMENTE sobre o capital RESTANTE após abatimentos
- * - Dias reiniciam do ÚLTIMO pagamento (não da data do empréstimo)
- * - Status baseado em dias desde o ÚLTIMO pagamento
+ * MOTOR DE CÁLCULO CORRIGIDO v2
+ * QUITADO somente quando: capital zerado E juros do período pagos
+ * Tipo PARCIAL: abate capital mas não quita se ainda há juros pendentes
  */
 
 const DAILY_RATE    = 0.01;
@@ -35,40 +34,30 @@ function r2(v) { return Math.round(v * 100) / 100; }
 function calculateLoanStatus(loan, payments = []) {
   const principal = parseFloat(loan.principal);
 
-  // Capital restante = capital original - soma dos pagamentos PARCIAL e QUITACAO
+  // Capital abatido = soma dos PARCIAL + QUITACAO
   const capitalAbatido = payments
     .filter(p => p.payment_type === 'PARCIAL' || p.payment_type === 'QUITACAO')
     .reduce((s, p) => s + parseFloat(p.amount), 0);
 
-  const capitalRestante = Math.max(principal - capitalAbatido, 0);
+  const capitalRestante = r2(Math.max(principal - capitalAbatido, 0));
 
-  // Dias desde o ÚLTIMO pagamento (qualquer tipo)
+  // Dias desde último pagamento
   const daysSincePay = daysSinceLastPayment(loan.loan_date, payments);
+  const totalDays    = daysSince(loan.loan_date);
 
-  // Dias totais desde o empréstimo
-  const totalDays = daysSince(loan.loan_date);
-
-  // Juros calculados SOMENTE sobre os dias desde o último pagamento
-  // sobre o capital restante
+  // Juros sobre capital restante pelo período desde último pagamento
   const interest = r2(capitalRestante * DAILY_RATE * daysSincePay);
 
-  // Multa: após 30 dias sem pagamento
+  // Multa após 30 dias sem pagamento
   let fine = 0, fineDays = 0;
   if (daysSincePay > CYCLE_DAYS) {
     fineDays = Math.min(daysSincePay - CYCLE_DAYS, MAX_FINE_DAYS);
-    fine = r2(fineDays * FINE_PER_DAY);
+    fine     = r2(fineDays * FINE_PER_DAY);
   }
 
-  // Total pago
-  const totalPaid = r2(payments.reduce((s, p) => s + parseFloat(p.amount), 0));
-
-  // Dívida atual = capital restante + juros do período + multa
-  const currentDebt = r2(Math.max(capitalRestante + interest + fine, 0));
-
-  // Valor para renovar (30% do capital restante)
-  const cyclePayment = r2(capitalRestante * 0.30);
-
-  // Quitação total
+  const totalPaid      = r2(payments.reduce((s, p) => s + parseFloat(p.amount), 0));
+  const currentDebt    = r2(Math.max(capitalRestante + interest + fine, 0));
+  const cyclePayment   = r2(capitalRestante * CYCLE_RATE_30);
   const fullSettlement = r2(capitalRestante + interest + fine);
 
   // Próximo vencimento = último pagamento + 30 dias
@@ -79,13 +68,13 @@ function calculateLoanStatus(loan, payments = []) {
       return d > max ? d : max;
     }, new Date(0));
   }
-  const nextDueDate = new Date(baseDate);
+  const nextDueDate  = new Date(baseDate);
   nextDueDate.setDate(nextDueDate.getDate() + CYCLE_DAYS);
   const daysUntilDue = Math.floor((nextDueDate - new Date()) / 86_400_000);
 
-  // Status automático baseado em dias desde último pagamento
+  // QUITADO somente se capital E dívida total zerados
   let status = 'ATIVO';
-  if (capitalRestante <= 0.01 || totalPaid >= fullSettlement - 0.01) {
+  if (capitalRestante <= 0.01 && currentDebt <= 0.01) {
     status = 'QUITADO';
   } else if (daysSincePay > CYCLE_DAYS + MAX_FINE_DAYS) {
     status = 'CRITICO';
@@ -94,8 +83,8 @@ function calculateLoanStatus(loan, payments = []) {
   }
 
   return {
-    principal: r2(principal),
-    capitalRestante: r2(capitalRestante),
+    principal:            r2(principal),
+    capitalRestante,
     totalDays,
     daysSinceLastPayment: daysSincePay,
     interest,
@@ -106,14 +95,16 @@ function calculateLoanStatus(loan, payments = []) {
     fullSettlement,
     cyclePayment,
     status,
-    nextDueDate: nextDueDate.toISOString().split('T')[0],
+    nextDueDate:  nextDueDate.toISOString().split('T')[0],
     daysUntilDue,
-    isNearDue: daysUntilDue >= 0 && daysUntilDue <= 5,
+    isNearDue:    daysUntilDue >= 0 && daysUntilDue <= 5,
   };
 }
 
+const CYCLE_RATE_30 = 0.30;
+
 function generateChargeText(loan, calc, clientName) {
-  const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmt     = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const fmtDate = (d) => { const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; };
   return `━━━━━━━━━━━━━━━━━━━━━━━━
 💰 COBRANÇA — EMPRÉSTIMO
@@ -134,11 +125,10 @@ function generateChargeText(loan, calc, clientName) {
 ━━━━━━━━━━━━━━━━━━━━━━━━
 Para regularizar hoje:
 
-✅ Opção 1 — Renovar prazo
-   Pague os juros: ${fmt(calc.cyclePayment)}
-   Prazo renova por mais 30 dias.
+✅ Opção 1 — Pagar juros e renovar prazo
+   Valor: ${fmt(calc.cyclePayment)}
 
-✅ Opção 2 — Quitar total
+✅ Opção 2 — Quitar capital + juros
    Valor total: ${fmt(calc.fullSettlement)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━
@@ -169,7 +159,6 @@ function calculateDashboardStats(loans, payments) {
   payments.forEach(p => { (byLoan[p.loan_id] = byLoan[p.loan_id] || []).push(p); });
   let totalLent=0, totalReceivable=0, totalCollected=0;
   let active=0, late=0, critical=0, settled=0;
-
   loans.forEach(loan => {
     const lp   = byLoan[loan.id] || [];
     const calc = calculateLoanStatus(loan, lp);
@@ -178,22 +167,21 @@ function calculateDashboardStats(loans, payments) {
     if (calc.status === 'QUITADO') { settled++; }
     else {
       totalReceivable += calc.currentDebt;
-      if (calc.status === 'CRITICO')  { critical++; late++; }
+      if (calc.status === 'CRITICO')       { critical++; late++; }
       else if (calc.status === 'ATRASADO') { late++; active++; }
       else active++;
     }
   });
-
   return {
-    totalLent:       Math.round(totalLent*100)/100,
-    totalReceivable: Math.round(totalReceivable*100)/100,
-    totalCollected:  Math.round(totalCollected*100)/100,
-    estimatedProfit: Math.round((totalCollected-totalLent)*100)/100,
-    activeContracts: active,
-    lateContracts:   late,
+    totalLent:         r2(totalLent),
+    totalReceivable:   r2(totalReceivable),
+    totalCollected:    r2(totalCollected),
+    estimatedProfit:   r2(totalCollected - totalLent),
+    activeContracts:   active,
+    lateContracts:     late,
     criticalContracts: critical,
-    settledContracts: settled,
-    totalContracts:  loans.length,
+    settledContracts:  settled,
+    totalContracts:    loans.length,
   };
 }
 
