@@ -1,19 +1,19 @@
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
+const BASE = import.meta.env.VITE_API_URL || 'https://loan-system-api-af5k.onrender.com/api'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
+  baseURL: BASE,
   timeout: 15000,
 })
 
-// Injeta JWT
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token')
   if (token) cfg.headers.Authorization = `Bearer ${token}`
   return cfg
 })
 
-// Trata erros globalmente
 api.interceptors.response.use(
   res => res,
   err => {
