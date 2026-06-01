@@ -26,6 +26,11 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
+const emptyStats = {
+  totalLent: 0, totalReceivable: 0, estimatedProfit: 0,
+  activeContracts: 0, lateContracts: 0, criticalContracts: 0, settledContracts: 0
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -41,7 +46,6 @@ export default function DashboardPage() {
 
   useEffect(() => { load() }, [])
 
-  // Mescla dados mensais para gráfico
   const chartData = () => {
     if (!data) return []
     const map = {}
@@ -60,22 +64,21 @@ export default function DashboardPage() {
 
   if (loading) return <Loading />
 
-  const { stats, alerts } = data
+  const stats = data?.stats || emptyStats
+  const alerts = data?.alerts || []
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-sub">Visão geral do sistema de empréstimos</p>
+          <p className="page-sub">Visão geral — CREDIX Gestão de Empréstimos</p>
         </div>
         <button onClick={load} className="btn-ghost">
           <RefreshCw size={16} /> Atualizar
         </button>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard label="Total Emprestado"   value={fmt.currency(stats.totalLent)}       icon={DollarSign}   color="sky"     />
         <StatCard label="A Receber"          value={fmt.currency(stats.totalReceivable)} icon={TrendingUp}   color="violet"  />
@@ -85,7 +88,6 @@ export default function DashboardPage() {
         <StatCard label="Críticos"           value={stats.criticalContracts}             icon={AlertTriangle}color="red"     />
       </div>
 
-      {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="card">
           <h3 className="text-sm font-semibold text-white mb-4">Fluxo Mensal</h3>
@@ -136,8 +138,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Alertas */}
-      {alerts?.length > 0 && (
+      {alerts.length > 0 && (
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-white flex items-center gap-2">
