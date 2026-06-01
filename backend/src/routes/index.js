@@ -1,62 +1,43 @@
-const express  = require('express');
-const router   = express.Router();
-const auth     = require('../middleware/auth');
-const upload   = require('../middleware/upload');
+const express = require('express');
+const router = express.Router();
 
-const authCtrl      = require('../controllers/authController');
-const dashCtrl      = require('../controllers/dashboardController');
-const clientsCtrl   = require('../controllers/clientsController');
-const loansCtrl     = require('../controllers/loansController');
-const paymentsCtrl  = require('../controllers/paymentsController');
-const cashCtrl      = require('../controllers/cashController');
-const reportsCtrl   = require('../controllers/reportsController');
-const simCtrl       = require('../controllers/simulatorController');
+const authController = require('../controllers/auth');
+const clientsController = require('../controllers/clients');
+const loansController = require('../controllers/loans');
+const paymentsController = require('../controllers/payments');
+const dashboardController = require('../controllers/dashboard');
 
-// AUTH
-router.post('/auth/login',         authCtrl.login);
-router.get ('/auth/me',       auth, authCtrl.me);
-router.put ('/auth/password', auth, authCtrl.changePassword);
+const { authenticateToken } = require('../middleware/auth');
 
-// DASHBOARD
-router.get('/dashboard', auth, dashCtrl.getDashboard);
+// Auth
+router.post('/auth/login', authController.login);
+router.post('/auth/register', authController.register);
 
-// CLIENTS
-router.get   ('/clients',              auth, clientsCtrl.getAll);
-router.get   ('/clients/ranking',      auth, clientsCtrl.getRanking);
-router.get   ('/clients/:id',          auth, clientsCtrl.getById);
-router.post  ('/clients',              auth, clientsCtrl.create);
-router.put   ('/clients/:id',          auth, clientsCtrl.update);
-router.delete('/clients/:id',          auth, clientsCtrl.remove);
-router.post  ('/clients/:id/documents',auth,
-  upload.fields([
-    { name:'doc_residence',maxCount:1 },
-    { name:'doc_id_front', maxCount:1 },
-    { name:'doc_id_back',  maxCount:1 },
-  ]), clientsCtrl.uploadDocs);
+// Protegidas
+router.use(authenticateToken);
 
-// LOANS
-router.get   ('/loans',              auth, loansCtrl.getAll);
-router.get   ('/loans/:id',          auth, loansCtrl.getById);
-router.post  ('/loans',              auth, loansCtrl.create);
-router.get   ('/loans/:id/charge',   auth, loansCtrl.getCharge);
-router.post  ('/loans/sync-statuses',auth, loansCtrl.syncStatus);
-router.delete('/loans/:id',          auth, loansCtrl.remove);
+// Dashboard
+router.get('/dashboard', dashboardController.getDashboard);
 
-// PAYMENTS
-router.get   ('/loans/:loanId/payments', auth, paymentsCtrl.getByLoan);
-router.post  ('/payments',               auth, paymentsCtrl.create);
-router.delete('/payments/:id',           auth, paymentsCtrl.remove);
+// Clientes
+router.get('/clients', clientsController.getClients);
+router.get('/clients/:id', clientsController.getClientById);
+router.post('/clients', clientsController.createClient);
+router.put('/clients/:id', clientsController.updateClient);
+router.delete('/clients/:id', clientsController.deleteClient);
 
-// CAIXA
-router.get   ('/cash',     auth, cashCtrl.getSummary);
-router.post  ('/cash',     auth, cashCtrl.addEntry);
-router.delete('/cash/:id', auth, cashCtrl.remove);
+// Empréstimos
+router.get('/loans', loansController.getLoans);
+router.get('/loans/:id', loansController.getLoanById);
+router.post('/loans', loansController.createLoan);
+router.put('/loans/:id', loansController.updateLoan);
+router.delete('/loans/:id', loansController.deleteLoan);
+router.get('/loans/:id/charge', loansController.generateCharge);
 
-// RELATÓRIOS
-router.get('/reports',          auth, reportsCtrl.getReports);
-router.get('/reports/export',   auth, reportsCtrl.exportCSV);
-
-// SIMULADOR
-router.get('/simulator', auth, simCtrl.simulate);
+// Pagamentos
+router.get('/payments', paymentsController.getAllPayments);
+router.get('/payments/loan/:loanId', paymentsController.getPaymentsByLoan);
+router.post('/payments', paymentsController.createPayment);
+router.delete('/payments/:id', paymentsController.deletePayment);
 
 module.exports = router;
