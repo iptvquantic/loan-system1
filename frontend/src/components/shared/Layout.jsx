@@ -58,7 +58,7 @@ export default function Layout() {
           <TrendingUp size={20} className="text-white" />
         </div>
         <div>
-          <p className="font-bold text-white text-sm leading-none">LoanSystem</p>
+          <p className="font-bold text-white text-sm leading-none">CREDIX</p>
           <p className="text-xs text-slate-500 mt-0.5">Gestão de Empréstimos</p>
         </div>
       </div>
@@ -123,7 +123,7 @@ export default function Layout() {
             <div className="w-7 h-7 bg-sky-500 rounded-lg flex items-center justify-center">
               <TrendingUp size={16} className="text-white" />
             </div>
-            <span className="font-bold text-white text-sm">LoanSystem</span>
+            <span className="font-bold text-white text-sm">CREDIX</span>
           </div>
         </header>
 
