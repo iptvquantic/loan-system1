@@ -1,48 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, FileText, CreditCard, Bell,
+  LayoutDashboard, Users, FileText, CreditCard,
   Calculator, Wallet, BarChart3, Trophy, Settings,
-  LogOut, Menu, X, ChevronRight, TrendingUp
+  LogOut, Menu, X, ChevronRight, Sun, Moon
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
 
 const NAV = [
-  { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard'  },
-  { to: '/clients',    icon: Users,            label: 'Clientes'   },
-  { to: '/loans',      icon: FileText,         label: 'Empréstimos'},
-  { to: '/payments',   icon: CreditCard,       label: 'Pagamentos' },
-  { to: '/cash',       icon: Wallet,           label: 'Caixa'      },
-  { to: '/simulator',  icon: Calculator,       label: 'Simulador'  },
-  { to: '/reports',    icon: BarChart3,        label: 'Relatórios' },
-  { to: '/ranking',    icon: Trophy,           label: 'Ranking'    },
+  { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard'    },
+  { to: '/clients',    icon: Users,            label: 'Clientes'     },
+  { to: '/loans',      icon: FileText,         label: 'Empréstimos'  },
+  { to: '/payments',   icon: CreditCard,       label: 'Pagamentos'   },
+  { to: '/cash',       icon: Wallet,           label: 'Caixa'        },
+  { to: '/simulator',  icon: Calculator,       label: 'Simulador'    },
+  { to: '/reports',    icon: BarChart3,        label: 'Relatórios'   },
+  { to: '/ranking',    icon: Trophy,           label: 'Ranking'      },
   { to: '/settings',   icon: Settings,         label: 'Configurações'},
 ]
 
 function NavItem({ to, icon: Icon, label, onClick }) {
   return (
-    <NavLink
-      to={to}
-      onClick={onClick}
+    <NavLink to={to} onClick={onClick}
       className={({ isActive }) =>
         `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
          ${isActive
-           ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-           : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'}`
+           ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+           : 'hover:bg-[var(--bg-hover)]'}`
       }
+      style={({ isActive }) => ({ color: isActive ? '#60a5fa' : 'var(--text-secondary)' })}
     >
-      <Icon size={18} />
+      <Icon size={17} />
       <span>{label}</span>
-      <ChevronRight size={14} className="ml-auto opacity-0 group-hover:opacity-50 transition-opacity" />
+      <ChevronRight size={13} className="ml-auto opacity-0 group-hover:opacity-40 transition-opacity" />
     </NavLink>
   )
 }
 
 export default function Layout() {
   const [sideOpen, setSideOpen] = useState(false)
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
   const { admin, logout } = useAuthStore()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   const handleLogout = () => {
     logout()
@@ -50,88 +57,116 @@ export default function Layout() {
     navigate('/login')
   }
 
-  const Sidebar = ({ mobile = false }) => (
-    <div className={`flex flex-col h-full ${mobile ? '' : 'w-64'}`}>
+  const Sidebar = ({ mobile }) => (
+    <aside style={{
+      width: mobile ? '100%' : 240,
+      background: 'var(--bg-secondary)',
+      borderRight: '1px solid var(--border)',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      padding: '16px 12px',
+    }}>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800">
-        <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center shadow-glow flex-shrink-0">
-          <TrendingUp size={20} className="text-white" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px 20px', borderBottom: '1px solid var(--border)', marginBottom: 12 }}>
+        <div style={{
+          width: 36, height: 36, background: 'var(--bg-primary)',
+          border: '2px solid #3b82f6', borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+        }}>
+          <span style={{ fontFamily: 'Arial Black,Arial', fontWeight: 900, fontSize: '1.1rem', color: '#3b82f6', lineHeight: 1 }}>C</span>
         </div>
         <div>
-          <p className="font-bold text-white text-sm leading-none">CREDIX</p>
-          <p className="text-xs text-slate-500 mt-0.5">Gestão de Empréstimos</p>
+          <p style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: 15, lineHeight: 1, letterSpacing: '0.02em' }}>CREDIX</p>
+          <p style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>Gestão de Empréstimos</p>
         </div>
+        {mobile && (
+          <button onClick={() => setSideOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {NAV.map(item => (
-          <NavItem key={item.to} {...item} onClick={() => mobile && setSideOpen(false)} />
-        ))}
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {NAV.map(n => <NavItem key={n.to} {...n} onClick={mobile ? () => setSideOpen(false) : undefined} />)}
       </nav>
 
-      {/* User */}
-      <div className="px-3 py-4 border-t border-slate-800">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800 mb-2">
-          <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 text-xs font-bold flex-shrink-0">
-            {admin?.name?.[0]?.toUpperCase() ?? 'A'}
-          </div>
-          <div className="overflow-hidden">
-            <p className="text-xs font-semibold text-white truncate">{admin?.name ?? 'Admin'}</p>
-            <p className="text-xs text-slate-500 truncate">{admin?.email ?? ''}</p>
-          </div>
-        </div>
-        <button onClick={handleLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all">
-          <LogOut size={16} />
-          <span>Sair</span>
+      {/* Footer */}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Dark/Light toggle */}
+        <button onClick={toggleTheme} style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)',
+          background: 'var(--bg-hover)', cursor: 'pointer',
+          color: 'var(--text-secondary)', fontSize: 13, fontWeight: 500,
+          transition: 'all 0.15s'
+        }}>
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
         </button>
+
+        {/* User */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px' }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%',
+            background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0
+          }}>
+            {admin?.name?.[0]?.toUpperCase() || 'A'}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin?.name || 'Admin'}</p>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin?.email}</p>
+          </div>
+          <button onClick={handleLogout} title="Sair" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 4, borderRadius: 6, transition: 'color 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.color='#ef4444'}
+            onMouseLeave={e => e.currentTarget.style.color='var(--text-muted)'}
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </div>
-    </div>
+    </aside>
   )
 
   return (
-    <div className="flex h-screen bg-slate-950 overflow-hidden">
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-primary)', overflow: 'hidden' }}>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-64 bg-slate-900 border-r border-slate-800 flex-shrink-0 flex-col">
+      <div className="hidden lg:flex" style={{ flexShrink: 0 }}>
         <Sidebar />
-      </aside>
+      </div>
 
       {/* Mobile overlay */}
       {sideOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setSideOpen(false)} />
-          <aside className="relative z-10 w-72 bg-slate-900 border-r border-slate-800 flex flex-col">
-            <div className="absolute top-4 right-4">
-              <button onClick={() => setSideOpen(false)} className="text-slate-400 hover:text-white p-1">
-                <X size={20} />
-              </button>
-            </div>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 40, display: 'flex' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }} onClick={() => setSideOpen(false)} />
+          <div style={{ position: 'relative', zIndex: 1, width: 260 }}>
             <Sidebar mobile />
-          </aside>
+          </div>
         </div>
       )}
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Mobile topbar */}
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 bg-slate-900 border-b border-slate-800 flex-shrink-0">
-          <button onClick={() => setSideOpen(true)} className="text-slate-400 hover:text-white p-1">
+        <header className="flex lg:hidden" style={{
+          alignItems: 'center', gap: 12, padding: '12px 16px',
+          background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)'
+        }}>
+          <button onClick={() => setSideOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
             <Menu size={22} />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-sky-500 rounded-lg flex items-center justify-center">
-              <TrendingUp size={16} className="text-white" />
-            </div>
-            <span className="font-bold text-white text-sm">CREDIX</span>
-          </div>
+          <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>CREDIX</span>
+          <button onClick={toggleTheme} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-            <Outlet />
-          </div>
+        {/* Content */}
+        <main style={{ flex: 1, overflowY: 'auto', padding: '24px' }} className="animate-fade-in">
+          <Outlet />
         </main>
       </div>
     </div>
