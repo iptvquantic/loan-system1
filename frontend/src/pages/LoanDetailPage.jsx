@@ -72,7 +72,7 @@ export default function LoanDetailPage() {
   if (loading) return <Loading />
   if (!loan) return <div style={{ color:'var(--text-muted)', padding:32 }}>Contrato nao encontrado.</div>
 
-  const statusColors = { ATIVO:'#22c55e', ATRASADO:'#f59e0b', CRITICO':'#ef4444', QUITADO:'#94a3b8' }
+  const statusColors = { ATIVO:'#22c55e', ATRASADO:'#f59e0b', CRITICO:'#ef4444', QUITADO:'#94a3b8' }
 
   return (
     <div className="space-y-5 animate-fade-in">
