@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Loader2, Lock } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -23,59 +23,49 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-sky-500/5 rounded-full blur-3xl" />
+    <div style={{ minHeight:'100vh', background:'var(--bg-primary)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div style={{ position:'absolute', inset:0, overflow:'hidden', pointerEvents:'none' }}>
+        <div style={{ position:'absolute', top:'25%', left:'50%', transform:'translateX(-50%)', width:600, height:600, background:'rgba(59,130,246,0.05)', borderRadius:'50%', filter:'blur(80px)' }} />
       </div>
-      <div className="w-full max-w-md relative">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-          {/* Logo CREDIX */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-slate-800 border-2 border-sky-500 rounded-2xl flex items-center justify-center shadow-glow mb-4">
-              <span style={{fontFamily:'Arial Black,Arial',fontWeight:900,fontSize:'2rem',color:'#3b82f6',lineHeight:1}}>C</span>
+
+      <div style={{ width:'100%', maxWidth:420, position:'relative' }}>
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:20, padding:32, boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
+            <div style={{ width:56, height:56, background:'var(--bg-primary)', border:'2px solid #3b82f6', borderRadius:14, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12, boxShadow:'0 0 20px rgba(59,130,246,0.3)' }}>
+              <span style={{ fontFamily:'Arial Black,Arial', fontWeight:900, fontSize:'1.6rem', color:'#3b82f6', lineHeight:1 }}>C</span>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-wide">CREDIX</h1>
-            <p className="text-slate-500 text-sm mt-1">Gestão de Empréstimos Pessoais</p>
+            <h1 style={{ fontSize:22, fontWeight:800, color:'var(--text-primary)', letterSpacing:'0.02em' }}>CREDIX</h1>
+            <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:4 }}>Gestão de Empréstimos Pessoais</p>
           </div>
 
-          <form onSubmit={handle} className="space-y-5">
+          <form onSubmit={handle} style={{ display:'flex', flexDirection:'column', gap:16 }}>
             <div>
               <label className="label">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="input"
-                placeholder="seu@email.com"
-                required
-                autoFocus
-              />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" placeholder="seu@email.com" required autoFocus />
             </div>
             <div>
               <label className="label">Senha</label>
-              <div className="relative">
-                <input
-                  type={showPw ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="input pr-10"
-                  placeholder="••••••••"
-                  required
-                />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+              <div style={{ position:'relative' }}>
+                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="input" placeholder="••••••••" required style={{ paddingRight:40 }} />
+                <button type="button" onClick={() => setShowPw(!showPw)} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer' }}>
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading}
-              className="btn-primary w-full justify-center py-2.5 text-base mt-2">
+            <button type="submit" disabled={loading} className="btn-primary" style={{ justifyContent:'center', padding:'11px 0', fontSize:15, marginTop:4 }}>
               {loading ? <Loader2 size={18} className="animate-spin" /> : <Lock size={18} />}
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
+
+          <div style={{ marginTop:20, paddingTop:20, borderTop:'1px solid var(--border)', textAlign:'center' }}>
+            <p style={{ fontSize:13, color:'var(--text-muted)', marginBottom:12 }}>Não tem conta ainda?</p>
+            <Link to="/register" style={{ display:'block', background:'rgba(59,130,246,0.1)', border:'1px solid rgba(59,130,246,0.25)', color:'#60a5fa', borderRadius:10, padding:'11px 0', fontSize:14, fontWeight:700, textDecoration:'none', textAlign:'center', transition:'all 0.15s' }}>
+              🚀 Criar conta grátis — 15 dias de trial
+            </Link>
+          </div>
         </div>
-        <p className="text-center text-xs text-slate-600 mt-6">
+        <p style={{ textAlign:'center', fontSize:12, color:'var(--text-muted)', marginTop:16 }}>
           CREDIX © 2026 — Sistema privado
         </p>
       </div>
