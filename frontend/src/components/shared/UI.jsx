@@ -67,3 +67,27 @@ export function Badge({ status }) {
   }
   return <span className={map[status] || 'badge badge-quitado'}>{status}</span>
 }
+
+export function EmptyState({ text = 'Nenhum registro encontrado', icon }) {
+  return (
+    <div style={{ textAlign:'center', padding:'48px 0', color:'var(--text-muted)', fontSize:13 }}>
+      {text}
+    </div>
+  )
+}
+
+export function ConfirmDialog({ open, onClose, onConfirm, title, message, confirmText = 'Confirmar', danger }) {
+  if (!open) return null
+  return (
+    <div className="modal-overlay">
+      <div className="modal-box" style={{ maxWidth:400 }}>
+        <h2 style={{ fontSize:16, fontWeight:700, color:'var(--text-primary)', marginBottom:8 }}>{title}</h2>
+        <p style={{ fontSize:14, color:'var(--text-secondary)', marginBottom:24 }}>{message}</p>
+        <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+          <button onClick={onClose} className="btn-ghost">Cancelar</button>
+          <button onClick={onConfirm} className={danger ? 'btn-danger' : 'btn-primary'}>{confirmText}</button>
+        </div>
+      </div>
+    </div>
+  )
+}

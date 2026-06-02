@@ -14,6 +14,24 @@ export const fmt = {
   percent: (v) => `${parseFloat(v || 0).toFixed(1)}%`,
 }
 
+export function maskCPF(v) {
+  if (!v) return '—'
+  const d = v.replace(/\D/g, '')
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`
+  if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`
+  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9,11)}`
+}
+
+export function maskPhone(v) {
+  if (!v) return '—'
+  const d = v.replace(/\D/g, '')
+  if (d.length <= 2) return `(${d}`
+  if (d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7,11)}`
+}
+
 export function statusClass(status) {
   const map = {
     'ATIVO':    'badge badge-ativo',
@@ -22,4 +40,13 @@ export function statusClass(status) {
     'QUITADO':  'badge badge-quitado',
   }
   return map[status] || 'badge badge-quitado'
+}
+
+export function riskClass(risk) {
+  const map = {
+    'Baixo Risco':  { bg: 'rgba(34,197,94,0.12)',  color: '#22c55e', border: 'rgba(34,197,94,0.25)'  },
+    'Médio Risco':  { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: 'rgba(245,158,11,0.25)' },
+    'Alto Risco':   { bg: 'rgba(239,68,68,0.12)',  color: '#ef4444', border: 'rgba(239,68,68,0.25)'  },
+  }
+  return map[risk] || map['Baixo Risco']
 }
