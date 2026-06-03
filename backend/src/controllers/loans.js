@@ -4,18 +4,17 @@ const { calculateLoanState } = require('../utils/loanCalculator');
 const getLoans = async (req, res) => {
   try {
     const result = await db.query(`
-      SELECT l.*, c.name as client_name, c.phone as client_phone
+      SELECT l.*, c.name as client_name, c.phone as client_phone, c.cpf as client_cpf
       FROM loans l
       JOIN clients c ON l.client_id = c.id
       ORDER BY l.created_at DESC
     `);
-
     const loans = await Promise.all(result.rows.map(async (loan) => {
       const pmtRes = await db.query('SELECT * FROM payments WHERE loan_id = $1', [loan.id]);
       const state = calculateLoanState(loan, pmtRes.rows);
-      return { ...loan, ...state };
+      const totalPaid = pmtRes.rows.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+      return { ...loan, ...state, totalPaid };
     }));
-
     res.json(loans);
   } catch (err) {
     console.error('getLoans:', err);
@@ -27,16 +26,16 @@ const getLoanById = async (req, res) => {
   try {
     const { id } = req.params;
     const loanRes = await db.query(
-      'SELECT l.*, c.name as client_name, c.phone as client_phone FROM loans l JOIN clients c ON l.client_id = c.id WHERE l.id = $1',
+      `SELECT l.*, c.name as client_name, c.phone as client_phone, c.cpf as client_cpf
+       FROM loans l JOIN clients c ON l.client_id = c.id WHERE l.id = $1`,
       [id]
     );
     if (loanRes.rows.length === 0) return res.status(404).json({ error: 'Empréstimo não encontrado' });
-
     const loan = loanRes.rows[0];
     const pmtRes = await db.query('SELECT * FROM payments WHERE loan_id = $1 ORDER BY payment_date DESC', [id]);
     const state = calculateLoanState(loan, pmtRes.rows);
-
-    res.json({ ...loan, ...state, payments: pmtRes.rows });
+    const totalPaid = pmtRes.rows.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+    res.json({ ...loan, ...state, totalPaid, payments: pmtRes.rows });
   } catch (err) {
     console.error('getLoanById:', err);
     res.status(500).json({ error: 'Erro ao buscar empréstimo' });
@@ -49,10 +48,13 @@ const createLoan = async (req, res) => {
     if (!client_id || !amount || !loan_date) {
       return res.status(400).json({ error: 'client_id, amount e loan_date são obrigatórios' });
     }
+    if (parseFloat(amount) <= 0) {
+      return res.status(400).json({ error: 'Valor do empréstimo deve ser maior que zero' });
+    }
     const result = await db.query(
       `INSERT INTO loans (client_id, amount, loan_date, status, notes)
        VALUES ($1, $2, $3, 'ATIVO', $4) RETURNING *`,
-      [client_id, amount, loan_date, notes || null]
+      [client_id, parseFloat(amount), loan_date, notes || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -88,12 +90,12 @@ const deleteLoan = async (req, res) => {
   }
 };
 
-// CORRIGIDO: Gerar cobrança
 const generateCharge = async (req, res) => {
   try {
     const { id } = req.params;
     const loanRes = await db.query(
-      'SELECT l.*, c.name as client_name, c.phone as client_phone FROM loans l JOIN clients c ON l.client_id = c.id WHERE l.id = $1',
+      `SELECT l.*, c.name as client_name, c.phone as client_phone
+       FROM loans l JOIN clients c ON l.client_id = c.id WHERE l.id = $1`,
       [id]
     );
     if (loanRes.rows.length === 0) return res.status(404).json({ error: 'Empréstimo não encontrado' });
@@ -102,13 +104,29 @@ const generateCharge = async (req, res) => {
     const pmtRes = await db.query('SELECT * FROM payments WHERE loan_id = $1', [id]);
     const state = calculateLoanState(loan, pmtRes.rows);
 
-    const msg = `Olá ${loan.client_name}! Seu empréstimo de R$ ${parseFloat(loan.amount).toFixed(2)} tem saldo devedor de R$ ${state.totalDue.toFixed(2)} (capital: R$ ${state.remainingCapital.toFixed(2)} + juros: R$ ${state.accruedInterest.toFixed(2)}${state.fine > 0 ? ` + multa: R$ ${state.fine.toFixed(2)}` : ''}). Entre em contato para regularizar. CREDIX.`;
+    if (state.isFullyPaid) {
+      return res.status(400).json({ error: 'Este empréstimo já está quitado' });
+    }
 
-    res.json({
-      message: msg,
-      whatsappUrl: `https://wa.me/55${(loan.client_phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`,
-      state,
-    });
+    const capital = state.remainingCapital.toFixed(2)
+    const juros = state.accruedInterest.toFixed(2)
+    const multa = (state.fine || 0).toFixed(2)
+    const total = state.totalDue.toFixed(2)
+
+    let msg = `Olá ${loan.client_name}! `
+    msg += `Seu empréstimo no CREDIX: `
+    msg += `Capital: R$ ${capital}`
+    if (parseFloat(juros) > 0) msg += ` | Juros: R$ ${juros}`
+    if (parseFloat(multa) > 0) msg += ` | Multa: R$ ${multa}`
+    msg += ` | *Total: R$ ${total}*`
+    msg += `. Entre em contato para regularizar. Obrigado!`
+
+    const phone = (loan.client_phone || '').replace(/\D/g, '')
+    const whatsappUrl = phone
+      ? `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`
+      : null
+
+    res.json({ message: msg, whatsappUrl, state });
   } catch (err) {
     console.error('generateCharge:', err);
     res.status(500).json({ error: 'Erro ao gerar cobrança' });
