@@ -5,11 +5,20 @@ export const fmt = {
   },
   date: (d) => {
     if (!d) return '—'
-    return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR')
+    try {
+      const str = String(d).includes('T') ? d : d + 'T12:00:00'
+      const dt = new Date(str)
+      if (isNaN(dt.getTime())) return '—'
+      return dt.toLocaleDateString('pt-BR')
+    } catch { return '—' }
   },
   dateTime: (d) => {
     if (!d) return '—'
-    return new Date(d).toLocaleString('pt-BR')
+    try {
+      const dt = new Date(d)
+      if (isNaN(dt.getTime())) return '—'
+      return dt.toLocaleString('pt-BR')
+    } catch { return '—' }
   },
   percent: (v) => `${parseFloat(v || 0).toFixed(1)}%`,
 }
@@ -37,6 +46,7 @@ export function statusClass(status) {
     'ATIVO':    'badge badge-ativo',
     'ATRASADO': 'badge badge-atrasado',
     'CRÍTICO':  'badge badge-critico',
+    'CRITICO':  'badge badge-critico',
     'QUITADO':  'badge badge-quitado',
   }
   return map[status] || 'badge badge-quitado'
@@ -44,9 +54,9 @@ export function statusClass(status) {
 
 export function riskClass(risk) {
   const map = {
-    'Baixo Risco':  { bg: 'rgba(34,197,94,0.12)',  color: '#22c55e', border: 'rgba(34,197,94,0.25)'  },
-    'Médio Risco':  { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: 'rgba(245,158,11,0.25)' },
-    'Alto Risco':   { bg: 'rgba(239,68,68,0.12)',  color: '#ef4444', border: 'rgba(239,68,68,0.25)'  },
+    'Baixo Risco': { bg:'rgba(34,197,94,0.12)',  color:'#22c55e', border:'rgba(34,197,94,0.25)'  },
+    'Medio Risco': { bg:'rgba(245,158,11,0.12)', color:'#f59e0b', border:'rgba(245,158,11,0.25)' },
+    'Alto Risco':  { bg:'rgba(239,68,68,0.12)',  color:'#ef4444', border:'rgba(239,68,68,0.25)'  },
   }
   return map[risk] || map['Baixo Risco']
 }
