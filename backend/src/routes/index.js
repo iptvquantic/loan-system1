@@ -2,15 +2,13 @@ const express = require('express')
 const router = express.Router()
 
 const authMulti = require('../controllers/authMulti')
-const authController = require('../controllers/auth')
 const clientsController = require('../controllers/clients')
 const loansController = require('../controllers/loans')
 const paymentsController = require('../controllers/payments')
 const dashboardController = require('../controllers/dashboard')
-
 const { authenticateToken } = require('../middleware/auth')
 
-// Auth público
+// Auth publico
 router.post('/auth/register', authMulti.register)
 router.post('/auth/login', authMulti.login)
 router.get('/auth/me', authenticateToken, authMulti.getMe)
