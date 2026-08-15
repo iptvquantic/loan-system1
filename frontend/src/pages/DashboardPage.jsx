@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { DollarSign, Users, FileText, AlertTriangle, TrendingUp, RefreshCw, ChevronRight, TrendingDown } from 'lucide-react'
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { DollarSign, AlertTriangle, TrendingUp, RefreshCw, ChevronRight, FileText, Plus } from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import api from '../utils/api'
 import { fmt, statusClass } from '../utils/formatters'
-import { Loading, StatCard } from '../components/shared/UI'
+import { Loading } from '../components/shared/UI'
 import TrialBanner from '../components/shared/TrialBanner'
 import toast from 'react-hot-toast'
 
@@ -16,12 +16,6 @@ const CustomTooltip = ({ active, payload, label }) => {
       {payload.map(p => <p key={p.name} style={{ color:p.color, fontWeight:600 }}>{p.name}: {fmt.currency(p.value)}</p>)}
     </div>
   )
-}
-
-const emptyStats = {
-  totalLentActive: 0, totalReceivable: 0, estimatedProfit: 0,
-  totalLent: 0, totalReceived: 0,
-  activeContracts: 0, lateContracts: 0, criticalContracts: 0, settledContracts: 0
 }
 
 export default function DashboardPage() {
@@ -53,169 +47,149 @@ export default function DashboardPage() {
   }
 
   if (loading) return <Loading />
-  const stats = data?.stats || emptyStats
+  const stats = data?.stats || {}
   const alerts = data?.alerts || []
-  const temAtivos = stats.activeContracts > 0
+  const temAtivos = (stats.activeContracts||0) > 0
 
   return (
     <div className="space-y-5 animate-fade-in">
       <TrialBanner />
+
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-sub">Visao geral financeira — CREDIX</p>
+          <p className="page-sub">Visao atual dos contratos em aberto</p>
         </div>
-        <button onClick={load} className="btn-ghost"><RefreshCw size={15}/> Atualizar</button>
-      </div>
-
-      {/* Cards principais */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-        <StatCard
-          label="Capital em Aberto"
-          value={fmt.currency(stats.totalLentActive || 0)}
-          icon={DollarSign} color="sky"
-          sub={temAtivos ? `${stats.activeContracts} contrato(s) ativo(s)` : 'Nenhum contrato ativo'}
-        />
-        <StatCard
-          label="A Receber (com juros)"
-          value={fmt.currency(stats.totalReceivable || 0)}
-          icon={TrendingUp} color="violet"
-          sub="Soma de todas as dívidas atuais"
-        />
-        <StatCard
-          label="Total Recebido"
-          value={fmt.currency(stats.totalReceived || 0)}
-          icon={TrendingUp} color="emerald"
-          sub="Todos os pagamentos históricos"
-        />
-        <StatCard
-          label="Lucro Real"
-          value={fmt.currency(stats.estimatedProfit || 0)}
-          icon={TrendingDown} color={stats.estimatedProfit >= 0 ? 'emerald' : 'red'}
-          sub="Recebido − Capital emprestado"
-        />
-      </div>
-
-      {/* Cards de contratos */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="card" style={{ padding:16, borderLeft:'3px solid #0ea5e9' }}>
-          <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, marginBottom:6 }}>Ativos</p>
-          <p style={{ fontSize:28, fontWeight:800, color:'#0ea5e9' }}>{stats.activeContracts||0}</p>
-        </div>
-        <div className="card" style={{ padding:16, borderLeft:'3px solid #f59e0b' }}>
-          <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, marginBottom:6 }}>Em Atraso</p>
-          <p style={{ fontSize:28, fontWeight:800, color:'#f59e0b' }}>{stats.lateContracts||0}</p>
-        </div>
-        <div className="card" style={{ padding:16, borderLeft:'3px solid #ef4444' }}>
-          <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, marginBottom:6 }}>Criticos</p>
-          <p style={{ fontSize:28, fontWeight:800, color:'#ef4444' }}>{stats.criticalContracts||0}</p>
-        </div>
-        <div className="card" style={{ padding:16, borderLeft:'3px solid #22c55e' }}>
-          <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, marginBottom:6 }}>Quitados</p>
-          <p style={{ fontSize:28, fontWeight:800, color:'#22c55e' }}>{stats.settledContracts||0}</p>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={load} className="btn-ghost"><RefreshCw size={15}/> Atualizar</button>
+          <Link to="/loans" className="btn-primary"><Plus size={15}/> Novo Emprestimo</Link>
         </div>
       </div>
 
-      {/* Aviso quando todos quitados */}
-      {!temAtivos && stats.settledContracts > 0 && (
-        <div style={{ background:'rgba(34,197,94,0.08)', border:'1px solid rgba(34,197,94,0.25)', borderRadius:12, padding:'16px 20px', display:'flex', alignItems:'center', gap:12 }}>
-          <span style={{ fontSize:24 }}>🎉</span>
-          <div>
-            <p style={{ fontWeight:700, color:'#22c55e', fontSize:15 }}>Todos os contratos quitados!</p>
-            <p style={{ color:'var(--text-muted)', fontSize:13, marginTop:2 }}>
-              Voce recebeu {fmt.currency(stats.totalReceived||0)} no total e teve um lucro de {fmt.currency(stats.estimatedProfit||0)}.
-              Cadastre novos emprestimos para continuar.
-            </p>
+      {/* Estado: sem contratos ativos */}
+      {!temAtivos ? (
+        <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:16, padding:'40px 24px', textAlign:'center' }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>📋</div>
+          <h2 style={{ fontSize:18, fontWeight:700, color:'var(--text-primary)', marginBottom:8 }}>
+            Nenhum contrato ativo no momento
+          </h2>
+          <p style={{ fontSize:14, color:'var(--text-muted)', marginBottom:24, maxWidth:400, margin:'0 auto 24px' }}>
+            {stats.settledContracts > 0
+              ? `Voce tem ${stats.settledContracts} contrato(s) quitado(s). Cadastre novos emprestimos para comecar um novo periodo.`
+              : 'Cadastre seu primeiro cliente e emprestimo para comecar.'}
+          </p>
+          <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
+            <Link to="/loans" className="btn-primary"><Plus size={15}/> Novo Emprestimo</Link>
+            {stats.settledContracts > 0 && (
+              <Link to="/reports" className="btn-ghost"><FileText size={15}/> Ver Historico</Link>
+            )}
           </div>
-          <Link to="/loans" className="btn-primary" style={{ marginLeft:'auto', whiteSpace:'nowrap' }}>
-            Novo Emprestimo
-          </Link>
         </div>
+      ) : (
+        <>
+          {/* Cards principais — só dados ATIVOS */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="card" style={{ padding:18, borderLeft:'3px solid #0ea5e9' }}>
+              <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:'0.05em', marginBottom:8 }}>Capital em Aberto</p>
+              <p style={{ fontSize:24, fontWeight:800, color:'#0ea5e9', fontVariantNumeric:'tabular-nums' }}>{fmt.currency(stats.totalLentActive||0)}</p>
+              <p style={{ fontSize:11, color:'var(--text-muted)', marginTop:4 }}>Capital ainda nao quitado</p>
+            </div>
+            <div className="card" style={{ padding:18, borderLeft:'3px solid #a78bfa' }}>
+              <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:'0.05em', marginBottom:8 }}>A Receber</p>
+              <p style={{ fontSize:24, fontWeight:800, color:'#a78bfa', fontVariantNumeric:'tabular-nums' }}>{fmt.currency(stats.totalReceivable||0)}</p>
+              <p style={{ fontSize:11, color:'var(--text-muted)', marginTop:4 }}>Capital + juros + multas</p>
+            </div>
+            <div className="card" style={{ padding:18, borderLeft:'3px solid #22c55e' }}>
+              <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:'0.05em', marginBottom:8 }}>Ativos</p>
+              <p style={{ fontSize:24, fontWeight:800, color:'#22c55e' }}>{stats.activeContracts||0}</p>
+              <p style={{ fontSize:11, color:'var(--text-muted)', marginTop:4 }}>{stats.settledContracts||0} quitado(s)</p>
+            </div>
+            <div className="card" style={{ padding:18, borderLeft:`3px solid ${(stats.lateContracts||0) > 0 ? '#ef4444' : '#f59e0b'}` }}>
+              <p style={{ fontSize:11, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:'0.05em', marginBottom:8 }}>Em Atraso / Criticos</p>
+              <p style={{ fontSize:24, fontWeight:800, color:(stats.lateContracts||0)+(stats.criticalContracts||0) > 0 ? '#ef4444' : '#22c55e' }}>
+                {(stats.lateContracts||0) + (stats.criticalContracts||0)}
+              </p>
+              <p style={{ fontSize:11, color:'var(--text-muted)', marginTop:4 }}>{stats.lateContracts||0} atrasado · {stats.criticalContracts||0} critico</p>
+            </div>
+          </div>
+
+          {/* Grafico mensal */}
+          {chartData().length > 0 && (
+            <div className="card">
+              <h3 style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', marginBottom:16 }}>Fluxo Mensal — Emprestado vs Recebido</h3>
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart data={chartData()}>
+                  <defs>
+                    <linearGradient id="gE" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/><stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/><stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="month" tick={{ fill:'var(--text-muted)', fontSize:11 }} axisLine={false} />
+                  <YAxis tick={{ fill:'var(--text-muted)', fontSize:11 }} axisLine={false} tickFormatter={v => `R$${(v/1000).toFixed(0)}k`} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area type="monotone" dataKey="Emprestado" stroke="#0ea5e9" fill="url(#gE)" strokeWidth={2} name="Emprestado" />
+                  <Area type="monotone" dataKey="Recebido" stroke="#22c55e" fill="url(#gR)" strokeWidth={2} name="Recebido" />
+                </AreaChart>
+              </ResponsiveContainer>
+              <div style={{ display:'flex', gap:16, marginTop:8, justifyContent:'center' }}>
+                <span style={{ fontSize:12, color:'#0ea5e9', display:'flex', alignItems:'center', gap:4 }}>
+                  <span style={{ width:12, height:3, background:'#0ea5e9', borderRadius:2, display:'inline-block' }}/>Emprestado
+                </span>
+                <span style={{ fontSize:12, color:'#22c55e', display:'flex', alignItems:'center', gap:4 }}>
+                  <span style={{ width:12, height:3, background:'#22c55e', borderRadius:2, display:'inline-block' }}/>Recebido
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Alertas */}
+          {alerts.length > 0 && (
+            <div className="card">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', display:'flex', alignItems:'center', gap:6 }}>
+                  <AlertTriangle size={15} color="#f59e0b"/> Contratos que precisam de atencao
+                </h3>
+                <Link to="/loans" style={{ fontSize:12, color:'#60a5fa', display:'flex', alignItems:'center', gap:4, textDecoration:'none' }}>
+                  Ver todos <ChevronRight size={13}/>
+                </Link>
+              </div>
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom:'1px solid var(--border)' }}>
+                      {['Cliente','Capital','Divida','Dias','Status',''].map(h => <th key={h} className="th">{h}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {alerts.map(l => (
+                      <tr key={l.id} className="table-row">
+                        <td className="td" style={{ fontWeight:600, color:'var(--text-primary)' }}>{l.client_name}</td>
+                        <td className="td text-money">{fmt.currency(l.principal)}</td>
+                        <td className="td text-money" style={{ color:'#f59e0b' }}>{fmt.currency(l.currentDebt)}</td>
+                        <td className="td"><span style={{ fontSize:12, fontWeight:700, color: l.daysSinceLastPayment > 30 ? '#ef4444' : '#f59e0b' }}>{l.daysSinceLastPayment}d</span></td>
+                        <td className="td"><span className={statusClass(l.status)}>{l.status}</span></td>
+                        <td className="td"><Link to={`/loans/${l.id}`} style={{ color:'#60a5fa', fontSize:12, textDecoration:'none' }}>Ver</Link></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Graficos */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className="card">
-          <h3 style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', marginBottom:16 }}>Fluxo Mensal (Emprestado vs Recebido)</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={chartData()}>
-              <defs>
-                <linearGradient id="gE" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="month" tick={{ fill:'var(--text-muted)', fontSize:11 }} axisLine={false} />
-              <YAxis tick={{ fill:'var(--text-muted)', fontSize:11 }} axisLine={false} tickFormatter={v => `R$${(v/1000).toFixed(0)}k`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize:12, color:'var(--text-secondary)' }} />
-              <Area type="monotone" dataKey="Emprestado" stroke="#0ea5e9" fill="url(#gE)" strokeWidth={2} />
-              <Area type="monotone" dataKey="Recebido" stroke="#22c55e" fill="url(#gR)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="card">
-          <h3 style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', marginBottom:16 }}>Contratos por Status</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={[{
-              name:'Contratos',
-              Ativos: stats.activeContracts||0,
-              Atrasados: stats.lateContracts||0,
-              Criticos: stats.criticalContracts||0,
-              Quitados: stats.settledContracts||0,
-            }]} barSize={36}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fill:'var(--text-muted)', fontSize:11 }} axisLine={false} />
-              <YAxis tick={{ fill:'var(--text-muted)', fontSize:11 }} axisLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize:12, color:'var(--text-secondary)' }} />
-              <Bar dataKey="Ativos" fill="#0ea5e9" radius={[4,4,0,0]} />
-              <Bar dataKey="Atrasados" fill="#f59e0b" radius={[4,4,0,0]} />
-              <Bar dataKey="Criticos" fill="#ef4444" radius={[4,4,0,0]} />
-              <Bar dataKey="Quitados" fill="#22c55e" radius={[4,4,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      {/* Link discreto para historico */}
+      <div style={{ textAlign:'center', paddingTop:8 }}>
+        <Link to="/reports" style={{ fontSize:12, color:'var(--text-muted)', textDecoration:'none', display:'inline-flex', alignItems:'center', gap:4 }}>
+          <FileText size={13}/> Ver historico completo e lucro total em Relatorios
+        </Link>
       </div>
-
-      {alerts.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <h3 style={{ fontSize:13, fontWeight:600, color:'var(--text-primary)', display:'flex', alignItems:'center', gap:6 }}>
-              <AlertTriangle size={15} color="#f59e0b"/> Alertas — Contratos em atencao
-            </h3>
-            <Link to="/loans" style={{ fontSize:12, color:'#60a5fa', display:'flex', alignItems:'center', gap:4, textDecoration:'none' }}>
-              Ver todos <ChevronRight size={13}/>
-            </Link>
-          </div>
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom:'1px solid var(--border)' }}>
-                  {['Cliente','Capital','Divida','Dias','Status',''].map(h => <th key={h} className="th">{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {alerts.map(l => (
-                  <tr key={l.id} className="table-row">
-                    <td className="td" style={{ fontWeight:600, color:'var(--text-primary)' }}>{l.client_name}</td>
-                    <td className="td text-money">{fmt.currency(l.principal)}</td>
-                    <td className="td text-money" style={{ color:'#f59e0b' }}>{fmt.currency(l.currentDebt)}</td>
-                    <td className="td"><span style={{ fontSize:12, fontWeight:700, color: l.daysSinceLastPayment > 30 ? '#ef4444' : '#f59e0b' }}>{l.daysSinceLastPayment}d</span></td>
-                    <td className="td"><span className={statusClass(l.status)}>{l.status}</span></td>
-                    <td className="td"><Link to={`/loans/${l.id}`} style={{ color:'#60a5fa', fontSize:12, textDecoration:'none' }}>Ver</Link></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
