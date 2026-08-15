@@ -8,6 +8,7 @@ const payments = require('../controllers/paymentsController')
 const dashboard = require('../controllers/dashboardController')
 const loansFull = require('../controllers/loans')
 const paymentsFull = require('../controllers/payments')
+const cash = require('../controllers/cashController')
 
 router.post('/auth/register', authMulti.register)
 router.post('/auth/login', authMulti.login)
@@ -36,5 +37,9 @@ router.get('/payments', paymentsFull.getAllPayments)
 router.get('/payments/loan/:loanId', payments.getByLoan)
 router.post('/payments', paymentsFull.createPayment)
 router.delete('/payments/:id', payments.remove)
+
+router.get('/cash', cash.getSummary)
+router.post('/cash', cash.addEntry)
+router.delete('/cash/:id', cash.remove)
 
 module.exports = router
